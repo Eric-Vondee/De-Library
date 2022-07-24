@@ -13,7 +13,18 @@ const polygonTestnet = SUPPORTED_CHAINS['polygon-mumbai']
 
 router.post('/', async(req,res,next) => {
     try{
-
+        const {id, name} = req.body
+        const wallet = new ethers.Wallet(process.env.PRIVATE_KEY)
+        const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
+        const signer = wallet.connect(provider)
+        const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
+        const insertDocument = await tableLand.write(`INSERT INTO categories_80001_682  (id, name) VALUES ( ${Number(id)}, '${name}')`);
+        
+        return res.status(200).json({ 
+            statusode: 200, 
+            data: insertDocument 
+        })
+        
     }
     catch (e) {
         res.status(500).json({
@@ -31,7 +42,7 @@ router.post('/table', async(req,res,next) => {
         const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
 
         const { name } = await tableLand.create(
-            `name text, id text, primary key(id)`,
+            `name text, id int, primary key(id)`,
             `categories`
         )
         return res.status(200).json({ statusode: 200, data: name })
@@ -53,7 +64,7 @@ router.get('/', async(req,res,next) => {
         const signer = wallet.connect(provider)
         const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
 
-        const events = await tableLand.read(`SELECT * FROM  `)
+        const events = await tableLand.read(`SELECT * FROM categories_80001_682`)
         const entries = resultsToObjects(events)
 
         for (const {name, id } of entries) {

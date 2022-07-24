@@ -6,6 +6,7 @@ import * as dotenv from 'dotenv'
 import { ethers } from 'ethers'
 import { connect, resultsToObjects, SUPPORTED_CHAINS } from '@tableland/sdk'
 import { Web3Storage, getFilesFromPath } from 'web3.storage'
+import { title } from "process";
 const router = express.Router()
 dotenv.config();
 
@@ -22,18 +23,17 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage })
 
 
-router.post('/', async(req,res,next) => {
+router.post('/', upload.single('file'), async(req,res,next) => {
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY)
-    const provider = new ethers.providers.JsonRpcProvider("https://matic-mumbai.chainstacklabs.com")
+    const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
     const signer = wallet.connect(provider)
     const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
     try{
-
+        const {description, category, title} = req.body
         const uploadName = ["Document", req.file.originalname].join('|')
 
         const web3Storage = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN })
         console.log(`> 🤖 calculating content ID for ${req.file.originalname}`)
-
         const document = await getFilesFromPath(path.join(__dirname, `${req.file.originalname}`))
         
         const cid = await web3Storage.put(document, {
@@ -45,8 +45,7 @@ router.post('/', async(req,res,next) => {
         })
 
         const uploadedDocumentUri = `ipfs://${cid}/${req.file.originalname}`
-        const insertDocument = await tableLand.write(`INSERT INTO  (id, eventName, eventType, category, eventDate, startTime, endTime, description, organizers, participantsNumber, ticketPrice, eventFile) 
-        VALUES ('${value.eventName.toLowerCase()}', '${value.eventName}' , '${value.eventType}', '${value.category}', '${value.eventDate}', '${value.startTime}', '${value.endTime}', '${value.description}', '${value.organizers}', ${Number(value.participantsNumber)}, ${Number(value.ticketPrice)}, '${imageURI}')`);
+        const insertDocument = await tableLand.write(`INSERT INTO library_80001_683 (id, description, category, uploadDate, documentURL)VALUES ('${title.toLowerCase()}', '${title}', '${description}' , '${category}', '${new Date()}', '${uploadedDocumentUri}' )`);
         
         await fs.unlinkSync(path.join(__dirname, `${req.file.originalname}`))
         res.status(200).json({
@@ -67,12 +66,12 @@ router.post('/', async(req,res,next) => {
 router.post('/table', async(req,res,next) => {
     try{
         const wallet = new ethers.Wallet(process.env.PRIVATE_KEY)
-        const provider = new ethers.providers.JsonRpcProvider("https://matic-mumbai.chainstacklabs.com")
+        const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
         const signer = wallet.connect(provider)
         const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
         
         const { name } = await tableLand.create(
-            `eventName text, eventType text, category text, eventDate text, startTime text, endTime text, description text, organizers text, participantsNumber int, ticketPrice int, eventId text, eventFile text, id text, primary key(id)`,
+            `title text, description text, category text, uploadDate text, documentURL text, id text, primary key(id)`,
             `library`
         )
         return res.status(200).json({ statusode: 200, data: name })
@@ -89,17 +88,22 @@ router.get('/', async (req, res, next) => {
     try {
         let documents = []
         const wallet = new ethers.Wallet(process.env.PRIVATE_KEY)
-        const provider = new ethers.providers.JsonRpcProvider("https://matic-mumbai.chainstacklabs.com")
+        const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
         const signer = wallet.connect(provider)
         const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
 
-        const events = await tableLand.read(`SELECT * FROM  blockevents_80001_504`)
+        const events = await tableLand.read(`SELECT * FROM  library_80001_683`)
 
         const entries = resultsToObjects(events)
 
-        for (const {id } of entries) {
+        for (const {id, title, description, category, uploadDate, documentURL } of entries) {
             let data = {
                 'id': id,
+                'title': title,
+                'description': description,
+                'category': category,
+                'uploadDate': uploadDate,
+                'documentURL': documentURL
             }
             documents.push(data)
         }
@@ -107,7 +111,7 @@ router.get('/', async (req, res, next) => {
         res.status(200).json({
             statusCode: 200,
             message: "Documents fetched",
-            data: data
+            data: documents
         })
     }
     catch (e) {
@@ -125,7 +129,7 @@ router.get('/query', async (req, res, next) => {
         const signer = wallet.connect(provider)
         const tableLand = await await connect({ signer, network: "testnet", host: polygonTestnet.host, contract: polygonTestnet.contract, chainId: polygonTestnet.chainId })
 
-        const events = await tableLand.read(`SELECT * FROM blockevents_80001_504 WHERE id='${req.query.id}'`)
+        const events = await tableLand.read(`SELECT * FROM library_80001_683 WHERE id='${req.query.id}'`)
         const entries = resultsToObjects(events)
         res.status(200).json({
             statusCode: 200,

@@ -5,6 +5,7 @@ import express from 'express';
 import * as dotenv from 'dotenv'
 import './fetch-polyfill.js';
 import Library from './src/lbrary.js';
+import Category from './src/categories.js'
 
 const app = express()
 dotenv.config()
@@ -24,7 +25,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(compression());
 
 
-
+app.use('/categories', Category)
 app.use('/library', Library)
 
 //Catch 404 and forard to error handler 
