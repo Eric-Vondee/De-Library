@@ -7,7 +7,7 @@ import {
 } from "../components/connector/Connectors";
 import { DEFAULT_CHAINS } from "../components/connector/Blockchain";
 
-import { tuksAddr, tuksContractAbi } from "../constants";
+import { contractAddr, ContractAbi } from "../constants";
 
 export const Web3Context = createContext();
 
@@ -184,15 +184,15 @@ export const Web3Provider = (props) => {
   );
 
   const customContractInstance = new Contract(
-    tuksAddr,
-    tuksContractAbi,
+    contractAddr,
+    ContractAbi,
     customProvider
   );
 
   // Contract Instance
 
   const signer = provider?.getSigner();
-  const contractInstance = new Contract(tuksAddr, tuksContractAbi, signer);
+  const contractInstance = new Contract(contractAddr, ContractAbi, signer);
 
   return (
     <Web3Context.Provider
