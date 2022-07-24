@@ -1,18 +1,23 @@
-import React from "react";
+import { useContext } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import prov from "../assets/rec.png";
 import styles from "./Navbar.module.css";
 import { BiWallet } from "react-icons/bi";
+import { Web3Context } from "../../contexts/Web3Context";
 
 const Navbar = () => {
+  const { wallet, provider, connect, connectTo, disconnect } =
+    useContext(Web3Context);
+
   return (
     <nav
       className={`font-body flex justify-between py-12 px-20  relative ${styles.navbar}`}
     >
       <div className="flex">
-        <a href="/">
+        <Link href="/">
           <h1 className="text-4xl font-bold text-[#47013C]">De-Library</h1>
-        </a>
+        </Link>
         <div className="absolute left-96 bottom-16">
           <a href="./category">
             <Image src={prov} alt="prov" />
@@ -37,12 +42,23 @@ const Navbar = () => {
       </div>
 
       <div className="text-white">
-        <a href="./publication">
-          <button className="border-2 bg-white text-[#E11660] px-7 py-3 rounded flex">
+        {!wallet ? (
+          <button
+            onClick={connect}
+            className="border-2 bg-white text-[#E11660] px-7 py-3 rounded flex"
+          >
             <BiWallet color="#E11660" size={24} />
             <span className="ml-3">Connect Wallet</span>
           </button>
-        </a>
+        ) : (
+          <button
+            onClick={disconnect}
+            className="border-2 bg-white text-[#E11660] px-7 py-3 rounded flex"
+          >
+            <BiWallet color="#E11660" size={24} />
+            <span className="ml-3">Disconnect</span>
+          </button>
+        )}
       </div>
     </nav>
   );
